@@ -70,3 +70,7 @@ This project has been done by the University of Jordan students:
 - Jumana Dyab
 - Dina Khader
 - Shahid Sobani
+
+
+## Note
+This repo containt just the prototype of the project code base, it is not finished yet. Also, it requires many modification in it, from model structure, to the inference part. With your notes and supervising, we believe that we will provide the best code structure for this project.
