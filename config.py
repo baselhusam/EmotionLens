@@ -1,7 +1,9 @@
+"""
+This file contains all the configuration parameters for the application.
+"""
 # APP CONFIG
 DEBUG = True
-# SRC_VIDEO = 0
-SRC_VIDEO = "./assets/demo_video.MOV"
+SRC_VIDEO = 0
 FILTER_EMOTIONS = False
 
 

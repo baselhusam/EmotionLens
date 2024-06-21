@@ -1,19 +1,19 @@
-import cv2
+"""
+This is the official implementation of the EmotionLens class.
+"""
+from collections import Counter
+import pyshine as ps
 import numpy as np
+
+import cv2
 import torch
 from torchvision.transforms import transforms
+from batch_face import RetinaFace as ret
 
 from models import resmasking_dropout1
 
-from batch_face import RetinaFace as ret
-from collections import Counter
-import pyshine as ps
-
-
 import config
-import datetime
 from utils.sort import Sort
-# from utils.database import get_sec_id
 
 class EmotionLens():
     """
@@ -59,7 +59,7 @@ class EmotionLens():
         --------
         box: np.ndarray
             The bounding box of the face.
-        """  
+        """
         detector = ret(gpu_id=0)
         faces = detector(frame, cv=False)
         if faces is None:
@@ -137,7 +137,7 @@ class EmotionLens():
             xmin, ymin, xmax, ymax = int(xmin), int(ymin), int(xmax), int(ymax)
             cropped_faces.append(frame[ymin:ymax, xmin:xmax])
         return cropped_faces
-    
+
 
     @torch.no_grad()
     def get_emotions(self, frame, faces):
@@ -169,7 +169,7 @@ class EmotionLens():
         if config.FILTER_EMOTIONS:
             emotions = self.filter_emotions(emotions)
         return emotions
-    
+
     def draw_emotion(self, frame, face, emotion):
         """
         Draws the emotion on the face.
@@ -188,7 +188,7 @@ class EmotionLens():
             self.write_emotion(frame, face, emotion)
         except Exception as e:
             print(f"Error in drawing emotion: {e}")
-    
+
     def write_emotion(self, frame, face, emotion):
         """
         Writes the emotion on the face.
@@ -213,13 +213,13 @@ class EmotionLens():
                             text_offset_y=y1-10,
                             thickness=1,
                             vspace=2,
-                            hspace=2, 
+                            hspace=2,
                             font_scale=0.6,
                             background_RGB=(0,250,250),
                             text_RGB=(255,250,250))
         except Exception as e:
             print(f"Error in writing emotion: {e}")
-        
+
     def draw_faces(self, frame, faces, r=4, d=2, color=(255,255,127)):
         """
         Draws the faces on the frame.
@@ -264,7 +264,7 @@ class EmotionLens():
             cv2.line(frame, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
             cv2.ellipse(frame, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
 
-    
+
     def filter_emotions(self, emotions):
         """
         Process the emotions to "Positive", "Negative", and "Neutral".
@@ -291,7 +291,7 @@ class EmotionLens():
             elif emo in neutral_emotions:
                 emotions[i] = "Neutral"
         return emotions
-    
+
     def draw_emotion_counter(self, frame, emotions_counter):
         """
         Draws the emotion counter on the frame.
@@ -303,7 +303,6 @@ class EmotionLens():
         emotions_counter: Dict[str, int]
             A dictionary of emotions and their counts.
         """
-        
         for i, (emotion, count) in enumerate(emotions_counter.items()):
             text = f"{emotion}: {count}"
             try:
@@ -313,7 +312,7 @@ class EmotionLens():
                             text_offset_y=(i+1)*20,
                             thickness=1,
                             vspace=2,
-                            hspace=2, 
+                            hspace=2,
                             font_scale=0.6,
                             background_RGB=(0,250,250),
                             text_RGB=(255,250,250))
@@ -343,7 +342,7 @@ class EmotionLens():
             for emotion, count in counter.items():
                 emotions_counter[emotion] += count
         return {}, emotions_counter
-    
+
     def _make_detection(self, faces):
         """
         Makes a detection from the faces.
@@ -365,8 +364,26 @@ class EmotionLens():
         detections = np.array(detections)
         return detections
 
-        
     def apply_tracker(self, mot, faces, emotions, track_dict):
+        """
+        Applies the tracker to the faces.
+
+        Parameters:
+        -----------
+        mot: Sort
+            The tracker.
+        faces: List[np.ndarray]
+            A list of faces.
+        emotions: List[str]
+            A list of emotions of the faces.
+        track_dict: Dict[int, Dict[str, List[str]]]
+            The track dictionary.
+
+        Returns:
+        --------
+        track_dict: Dict[int, Dict[str, List[str]]]
+            The track dictionary.
+        """
         detection = self._make_detection(faces)
         try:
             tracked_faces = mot.update(detection)
@@ -383,7 +400,7 @@ class EmotionLens():
         except Exception as e:
             print(f"Error in applying tracker: {e}")
         return track_dict
-    
+
     def count_emotions(self, track_dict):
         """
         Counts the emotions in the track dictionary.
@@ -409,7 +426,7 @@ class EmotionLens():
             emotions_counter[maj_vote_emotion] += 1
 
         return emotions_counter
-    
+
     def filter_yolo_results(self, results, labels, frame):
         """
         Filters the YOLO results to only include the faces.
@@ -436,16 +453,15 @@ class EmotionLens():
                 x1, y1, x2, y2 = box
                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
                 try:
-                    ps.putBText(frame, 
-                                labels[int(cls)], 
-                                text_offset_x=x1, 
-                                text_offset_y=y2-20, 
-                                vspace=2, 
-                                hspace=2, 
-                                font_scale=0.4, 
-                                background_RGB=(255,150,250), 
+                    ps.putBText(frame,
+                                labels[int(cls)],
+                                text_offset_x=x1,
+                                text_offset_y=y2-20,
+                                vspace=2,
+                                hspace=2,
+                                font_scale=0.4,
+                                background_RGB=(255,150,250),
                                 text_RGB=(255,150,250))
                 except Exception as e:
                     print(f"Error in drawing faces: {e}")
         return boxes
-

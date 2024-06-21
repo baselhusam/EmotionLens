@@ -1,3 +1,6 @@
+"""
+This module contains general utility functions.
+"""
 from typing import Dict
 
 def get_emotion_counter(is_filter: bool) -> Dict:
@@ -16,8 +19,8 @@ def get_emotion_counter(is_filter: bool) -> Dict:
         A dictionary of emotions with their initial count.
     """
     if is_filter:
-        emotion_counter = {"Positive": 0, 
-                           "Negative": 0, 
+        emotion_counter = {"Positive": 0,
+                           "Negative": 0,
                            "Neutral": 0}
     else:
         emotion_counter = {"angry": 0,

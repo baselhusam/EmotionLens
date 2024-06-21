@@ -4,8 +4,8 @@ This is the Starting point of the project, EmotionLens.
 Created on Sat Mar 23 2024
 @author: Basel Husam
 """
-import cv2
 from typing import Dict, List, Union
+import cv2
 
 from utils.general import get_emotion_counter
 from utils.emotionlens import EmotionLens
@@ -27,7 +27,7 @@ if __name__=="__main__":
         ret, frame = cap.read()
         if not ret:
             break
-        
+
         # Init Frame Size
         init_resize_ratio = config.RESIZE_INIT_FRAME_RATIO
         frame = cv2.resize(frame, None, fx=init_resize_ratio, fy=init_resize_ratio)
