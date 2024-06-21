@@ -5,6 +5,7 @@ Created on Sat Mar 23 2024
 @author: Basel Husam
 """
 from typing import Dict, List, Union
+from ultralytics import YOLO
 import cv2
 
 from utils.general import get_emotion_counter
@@ -23,6 +24,10 @@ if __name__=="__main__":
     mot = Sort()
     cap = cv2.VideoCapture(config.SRC_VIDEO)
 
+    if config.APPLY_YOLO:
+        yolo = YOLO(config.YOLO_VERSION)
+        yolo_labels = yolo.names
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -35,6 +40,9 @@ if __name__=="__main__":
         # Get Faces and Emotions
         faces = el.get_faces(frame)
         emotions = el.get_emotions(frame, faces)
+        if config.APPLY_YOLO:
+            yolo_results = yolo(frame, conf=config.YOLO_CONF)
+            ret = el.filter_yolo_results(yolo_results, yolo_labels, frame)
 
         # Tracker...
         if config.APPLY_TRACKER:
@@ -51,7 +59,7 @@ if __name__=="__main__":
         show_resize_ratio = config.RESIZE_SHOW_FRAME_RATIO
         show_frame = cv2.resize(frame, None, fx=show_resize_ratio, fy=show_resize_ratio)
         cv2.imshow("Frame", show_frame)
-        if cv2.waitKey(0) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     # Release...

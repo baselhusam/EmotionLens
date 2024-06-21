@@ -435,6 +435,10 @@ class EmotionLens():
         -----------
         results: List[YOLOResult]
             The YOLO results.
+        labels: List[str]
+            The labels of the YOLO results.
+        frame: np.ndarray
+            The frame to draw the faces on.
 
         Returns:
         --------
@@ -447,7 +451,7 @@ class EmotionLens():
         boxes = [boxes[i] for i in idx]
         clss = [clss[i] for i in idx]
 
-        if config.DRAW:
+        if config.DRAW_YOLO:
             for box, cls in zip(boxes, clss):
                 self.draw_faces(frame, [box], r=20, d=15, color=(255,150,250))
                 x1, y1, x2, y2 = box
