@@ -137,3 +137,6 @@ saved
 pretrained_ckpt
 version.py
 *.swp
+
+# Custom Ignores
+assets/demo_video.MOV
