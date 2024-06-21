@@ -8,9 +8,9 @@ EmotionLens is a state-of-the-art system designed for real-time facial emotion r
 
 ## Features
 
-- Real-time facial emotion recognition using Residual Masking Network
-- Object detection with YOLO for enhanced data accuracy
-- Tracker for real-time data processing and analysis
+- Real-time facial emotion recognition using Residual Masking Network. [used from this repo](https://github.com/phamquiluan/ResidualMaskingNetwork)
+- Object detection with YOLO for enhanced Emotion Results
+- Tracker for tracking faces for enhancing the Emotion Results
 
 ## Project Structure
 
@@ -33,16 +33,16 @@ EmotionLens/
 ## Models
 
 ### Face Detection
-The face detection model utilizes a convolutional neural network (CNN) architecture to accurately detect and localize faces in real-time video streams. The model has been trained on diverse datasets to ensure robustness across various lighting conditions and environments.
+The face detection model For detecting faces. The used Model is `RetinaFace` in batch mode for handling large number of faces in Real-Time mode.
 
 ### Emotion Recognition
-EmotionLens employs the Residual Masking Network for emotion recognition. This deep learning model is specifically designed to interpret a wide range of emotional states from facial expressions. It categorizes emotions into positive, negative, and neutral, providing nuanced insights into student reactions.
+EmotionLens employs the Residual Masking Network for emotion recognition. This deep learning model is specifically designed to interpret a wide range of emotional states from facial expressions. It categorizes emotions into angry, disgust, fear, happy, sad, surprise, and neutral.
 
 ### YOLO Object Detection
-The YOLO (You Only Look Once) object detection system is integrated to identify and track objects such as laptops, phones, and other classroom-related items. This addition enhances the context of the emotion recognition system, allowing for more accurate interpretation of student engagement and behaviors.
+The YOLO (You Only Look Once) object detection system is integrated to identify objects such as laptops, phones, and other related items. This addition enhances the context of the emotion recognition system, allowing for more accurate interpretation of engagement and behaviors.
 
 ## Tracker
-The tracker module is responsible for processing real-time data from both the face detection and emotion recognition models. It ensures that the system can handle high-frequency video frames, maintaining low latency and high accuracy. The tracker also integrates data from the YOLO model to provide a comprehensive analysis of the classroom environment.
+The tracker module is responsible for tracking real-time faces from the face detection. This is for tacking the majority vote for each object as its final emotion. The used tracking algorithm is SORT (Simple Online Real-Time Tracking) [from the following repo](https://github.com/abewley/sort)
 
 ## Setup Instructions
 1. Clonse the Repository:
@@ -64,9 +64,7 @@ python main.py
 
 2. Emotion Recognition: Detected faces are analyzed to recognize and categorize emotions.
 
-3. Object Detection: The YOLO model identifies objects within the classroom to provide context for emotional states.
-
-4. Tracker: Integrates and processes data from all models to deliver real-time insights.
+3. Object Detection: The YOLO model identifies objects to provide context for emotional states.
 
 ## Configuration
 The `config.py` file allows customization of various parameters to tailor the system to specific requirements. Below is an overview of the configurable parameters:
@@ -74,7 +72,6 @@ The `config.py` file allows customization of various parameters to tailor the sy
 - `SRC_VIDEO`: Video source (0 for webcam or path to video file)
 
 - `FILTER_EMOTIONS`: Filter emotions to be positive, negative, and neutral only (True/False)
-Emotion Model Config
 
 - `APPLY_TRACKER`: Apply tracker (True/False)
 
@@ -82,12 +79,9 @@ Emotion Model Config
 
 - `YOLO_REQ_CLS`: List of required classes to filter YOLO results
 
-The config.py file ensures that the EmotionLens system is highly customizable to fit various operational requirements and environments.
+The `config.py` file ensures that the EmotionLens system is highly customizable to fit various operational requirements and environments.
 
 
-
-## License
-This project is licensed under the MIT License. See the LICENSE file for more details.
 
 ## Poster
 ![alt text](https://github.com/baselhusam/EmotionLens/blob/master/assets/Poster.jpg?raw=true)
