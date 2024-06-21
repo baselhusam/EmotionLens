@@ -11,10 +11,9 @@ from torchvision.transforms import transforms
 from batch_face import RetinaFace as ret
 
 from models import resmasking_dropout1
-
-import config
 from utils.general import get_emotion_counter
 from utils.sort import Sort
+import config
 
 class EmotionLens():
     """
@@ -47,7 +46,7 @@ class EmotionLens():
         emo_model.eval()
         return emo_model
 
-    def get_faces(self, frame):
+    def get_faces(self, frame: np.ndarray) -> np.ndarray:
         """
         Returns the bounding box of the face in the frame.
 
@@ -72,7 +71,7 @@ class EmotionLens():
             bbox.append(face[0])
         return np.array(bbox)
 
-    def ensure_color(self, image):
+    def ensure_color(self, image: np.ndarray) -> np.ndarray:
         """
         Ensures that the image is colored.
 
@@ -92,7 +91,7 @@ class EmotionLens():
             return np.dstack([image] * 3)
         return image
 
-    def preprocess_face(self, face):
+    def preprocess_face(self, face: np.ndarray) -> torch.Tensor:
         """
         Preprocesses the face to be fed into the emotion model.
 
@@ -117,7 +116,7 @@ class EmotionLens():
             face = face.cuda(0)
         return face
 
-    def crop_faces(self, frame, faces):
+    def crop_faces(self, frame: np.ndarray, faces: np.ndarray) -> list[np.ndarray]:
         """
         Returns a list of cropped faces from the frame.
 
@@ -141,7 +140,7 @@ class EmotionLens():
 
 
     @torch.no_grad()
-    def get_emotions(self, frame, faces):
+    def get_emotions(self, frame: np.ndarray, faces: list[np.ndarray]) -> list[str]:
         """
         Returns a list of emotions of the faces.
 
@@ -171,7 +170,7 @@ class EmotionLens():
             emotions = self.filter_emotions(emotions)
         return emotions
 
-    def draw_emotion(self, frame, face, emotion):
+    def draw_emotion(self, frame: np.ndarray, face: list[np.ndarray], emotion: list[str]) -> None:
         """
         Draws the emotion on the face.
 
@@ -190,7 +189,7 @@ class EmotionLens():
         except Exception as e:
             print(f"Error in drawing emotion: {e}")
 
-    def write_emotion(self, frame, face, emotion):
+    def write_emotion(self,frame: np.ndarray, face: list[np.ndarray], emotion: list[str]) -> None:
         """
         Writes the emotion on the face.
 
@@ -221,7 +220,12 @@ class EmotionLens():
         except Exception as e:
             print(f"Error in writing emotion: {e}")
 
-    def draw_faces(self, frame, faces, r=4, d=2, color=(255,255,127)):
+    def draw_faces(self,
+                   frame: np.ndarray,
+                   faces: list[np.ndarray],
+                   r: int=4,
+                   d: int=2,
+                   color: tuple=(255,255,127)) -> None:
         """
         Draws the faces on the frame.
 
@@ -237,10 +241,7 @@ class EmotionLens():
             face = [int(i) for i in face]
             pt1 = (face[0], face[1])
             pt2 = (face[2], face[3])
-            # color = (255,255,127)
             thickness = 2
-            # r = 4  # Change this value as needed
-            # d = 2  # Change this value as needed
 
             x1,y1 = pt1
             x2,y2 = pt2
@@ -266,7 +267,7 @@ class EmotionLens():
             cv2.ellipse(frame, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
 
 
-    def filter_emotions(self, emotions):
+    def filter_emotions(self, emotions: list[str]) -> list[str]:
         """
         Process the emotions to "Positive", "Negative", and "Neutral".
 
@@ -293,7 +294,7 @@ class EmotionLens():
                 emotions[i] = "Neutral"
         return emotions
 
-    def draw_emotion_counter(self, frame, emotions_counter):
+    def draw_emotion_counter(self, frame: np.ndarray, emotions_counter: dict[str, int]) -> None:
         """
         Draws the emotion counter on the frame.
 
@@ -320,7 +321,7 @@ class EmotionLens():
             except Exception as e:
                 print(f"Error in drawing emotion counter: {e}")
 
-    def reset_track_dict(self, track_dict, emotions_counter):
+    def reset_track_dict(self, track_dict: dict, emotions_counter: dict) -> dict:
         """
         Resets the track dictionary and adds the emotion counter to it.
 
@@ -344,7 +345,7 @@ class EmotionLens():
                 emotions_counter[emotion] += count
         return {}, emotions_counter
 
-    def _make_detection(self, faces):
+    def _make_detection(self, faces: list[np.ndarray]) -> np.ndarray:
         """
         Makes a detection from the faces.
 
@@ -365,7 +366,11 @@ class EmotionLens():
         detections = np.array(detections)
         return detections
 
-    def apply_tracker(self, mot, faces, emotions, track_dict):
+    def apply_tracker(self,
+                      mot: Sort,
+                      faces: list[np.ndarray],
+                      emotions: list[str],
+                      track_dict: dict) -> dict:
         """
         Applies the tracker to the faces.
 
@@ -402,7 +407,7 @@ class EmotionLens():
             print(f"Error in applying tracker: {e}")
         return track_dict
 
-    def count_emotions(self, track_dict):
+    def count_emotions(self, track_dict: dict) -> dict[str, int]:
         """
         Counts the emotions in the track dictionary.
 
@@ -427,7 +432,7 @@ class EmotionLens():
 
         return emotions_counter
 
-    def filter_yolo_results(self, results, labels, frame):
+    def filter_yolo_results(self, results: list, labels: list[str], frame: np.ndarray) -> list:
         """
         Filters the YOLO results to only include the faces.
 
