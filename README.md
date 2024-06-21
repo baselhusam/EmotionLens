@@ -1,6 +1,6 @@
 # EmotionLens
 
-![EmotionLens Logo](assets/logo.png)
+![EmotionLens Logo](https://github.com/baselhusam/EmotionLens/blob/master/assets/logo.png?raw=true)
 
 ## Introduction
 
@@ -89,6 +89,7 @@ The config.py file ensures that the EmotionLens system is highly customizable to
 ## License
 This project is licensed under the MIT License. See the LICENSE file for more details.
 
-![poster](assets/poster.jpg)
+## Poster
+![alt text](https://github.com/baselhusam/EmotionLens/blob/master/assets/Poster.jpg?raw=true)
 
 
