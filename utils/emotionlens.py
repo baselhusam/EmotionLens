@@ -13,6 +13,7 @@ from batch_face import RetinaFace as ret
 from models import resmasking_dropout1
 
 import config
+from utils.general import get_emotion_counter
 from utils.sort import Sort
 
 class EmotionLens():
@@ -417,7 +418,6 @@ class EmotionLens():
         emotions_counter: Dict[str, int]
             The emotion counter.
         """
-        from utils.general import get_emotion_counter
         emotions_counter = get_emotion_counter(config.FILTER_EMOTIONS)
         for face_id, face_obj in track_dict.items():
             emotions = face_obj["emotions"]
