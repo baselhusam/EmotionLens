@@ -5,7 +5,6 @@ from torchvision.transforms import transforms
 
 from models import resmasking_dropout1
 
-from retinaface import RetinaFace
 from batch_face import RetinaFace as ret
 from collections import Counter
 import pyshine as ps
@@ -13,7 +12,7 @@ import pyshine as ps
 
 import config
 import datetime
-# from utils.sort.sort import Sort
+from utils.sort import Sort
 # from utils.database import get_sec_id
 
 class EmotionLens():
@@ -71,38 +70,7 @@ class EmotionLens():
         for face in faces:
             bbox.append(face[0])
         return np.array(bbox)
-        
 
-    def get_faces2(self, frame):
-        """
-        Returns a list of faces' bounding boxes in the frame.
-        If debug is True, it prints the number of faces detected.
-
-        Parameters:
-        -----------
-        frame: np.ndarray
-            The frame to detect faces in.
-        debug: bool
-            If True, it prints the number of faces detected.
-
-        Returns:
-        --------
-        bbox: np.ndarray
-            A numpy array of shape (num_of_faces, 4) where each row is a bounding box of a face.
-        """
-        face_results = RetinaFace.detect_faces(frame)
-        if not isinstance(face_results, dict):
-            return []
-        if config.DEBUG:
-            print(f"Num of Faces: {len(face_results)}")
-
-        bbox = []
-        for _, face in face_results.items():
-            xmin, ymin, xmax, ymax = face["facial_area"]
-            bbox.append([xmin, ymin, xmax, ymax])
-
-        return np.array(bbox)
-    
     def ensure_color(self, image):
         """
         Ensures that the image is colored.
@@ -122,7 +90,7 @@ class EmotionLens():
         elif image.shape[2] == 1:
             return np.dstack([image] * 3)
         return image
-    
+
     def preprocess_face(self, face):
         """
         Preprocesses the face to be fed into the emotion model.
@@ -138,7 +106,10 @@ class EmotionLens():
             The preprocessed face.
         """
         face = self.ensure_color(face)
-        face = cv2.resize(face, config.IMG_SIZE)
+        try:
+            face = cv2.resize(face, config.IMG_SIZE)
+        except Exception as e:
+            print(f"Error in resizing face: {e}")
         face = self.transform(face)
         face = face.unsqueeze(0)
         if self.is_cuda:
@@ -186,13 +157,17 @@ class EmotionLens():
         emotions = []
         faces = self.crop_faces(frame, faces)
         for face in faces:
-            face = self.preprocess_face(face)
-            out = self.model(face)
-            emo = torch.argmax(out, dim=1)
-            emotion = config.FER_2013_EMO_DICT[emo.item()]
-            emotions.append(emotion)
+            try:
+                face = self.preprocess_face(face)
+                out = self.model(face)
+                emo = torch.argmax(out, dim=1)
+                emotion = config.FER_2013_EMO_DICT[emo.item()]
+                emotions.append(emotion)
+            except Exception as e:
+                print(f"Error in getting emotions: {e}")
 
-        emotions = self.filter_emotions(emotions)
+        if config.FILTER_EMOTIONS:
+            emotions = self.filter_emotions(emotions)
         return emotions
     
     def draw_emotion(self, frame, face, emotion):
@@ -262,7 +237,7 @@ class EmotionLens():
             pt1 = (face[0], face[1])
             pt2 = (face[2], face[3])
             # color = (255,255,127)
-            thickness = 1
+            thickness = 2
             # r = 4  # Change this value as needed
             # d = 2  # Change this value as needed
 
@@ -344,44 +319,7 @@ class EmotionLens():
                             text_RGB=(255,250,250))
             except Exception as e:
                 print(f"Error in drawing emotion counter: {e}")
-            
-    def track(self, frame, faces, track_dict):
-        """
-        Tracks the faces in the frame.
 
-        Parameters:
-        -----------
-        frame: np.ndarray
-            The frame to track the faces in.
-        faces: List[np.ndarray]
-            A list of faces to track.
-
-        Returns:
-        --------
-        frame: np.ndarray
-            The frame with the faces tracked.
-        """
-        mot = Sort()
-        detections = []
-        for face in faces:
-            x1, y1, x2, y2 = face
-            detections.append([x1, y1, x2, y2, 1])
-        detections = np.array(detections)
-        
-        tracked_faces = mot.update(detections)
-        for x1, y1, x2, y2, face_id in tracked_faces:
-            
-            # Get Face Emotion
-            emotion = self.get_emotions(frame, [x1, y1, x2, y2])
-
-            face_obj = track_dict.get(face_id, None)
-            if face_obj is None:
-                track_dict[face_id] = []
-
-            track_dict[face_id].append(emotion)
-
-        return track_dict
-    
     def reset_track_dict(self, track_dict, emotions_counter):
         """
         Resets the track dictionary and adds the emotion counter to it.
@@ -430,18 +368,20 @@ class EmotionLens():
         
     def apply_tracker(self, mot, faces, emotions, track_dict):
         detection = self._make_detection(faces)
-        tracked_faces = mot.update(detection)
-        for (x1, y1, x2, y2, face_id), emotion in zip(tracked_faces, emotions):
-            face_obj = track_dict.get(face_id, None)
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-            if face_obj is None:
-                track_dict[face_id] = {"emotions": [],
-                                       "face": [x1, y1, x2, y2],
-                                       "alive": False}
-            track_dict[face_id]["emotions"].append(emotion)
-            track_dict[face_id]["face"] = [x1, y1, x2, y2]
-            track_dict[face_id]["alive"] = True
-
+        try:
+            tracked_faces = mot.update(detection)
+            for (x1, y1, x2, y2, face_id), emotion in zip(tracked_faces, emotions):
+                face_obj = track_dict.get(face_id, None)
+                x1, y1, x2, y2, face_id = int(x1), int(y1), int(x2), int(y2), int(face_id)
+                if face_obj is None:
+                    track_dict[face_id] = {"emotions": [],
+                                        "face": [x1, y1, x2, y2],
+                                        "alive": False}
+                track_dict[face_id]["emotions"].append(emotion)
+                track_dict[face_id]["face"] = [x1, y1, x2, y2]
+                track_dict[face_id]["alive"] = True
+        except Exception as e:
+            print(f"Error in applying tracker: {e}")
         return track_dict
     
     def count_emotions(self, track_dict):
@@ -460,9 +400,8 @@ class EmotionLens():
         emotions_counter: Dict[str, int]
             The emotion counter.
         """
-        emotions_counter = {"Positive": 0,
-                            "Negative": 0,
-                            "Neutral": 0}
+        from utils.general import get_emotion_counter
+        emotions_counter = get_emotion_counter(config.FILTER_EMOTIONS)
         for face_id, face_obj in track_dict.items():
             emotions = face_obj["emotions"]
             counter = Counter(emotions)
@@ -471,70 +410,6 @@ class EmotionLens():
 
         return emotions_counter
     
-    def update_firebase_data(self, firebase_data, emotions_counter):
-        """
-        Updates the firebase data with the emotions counter.
-
-        Parameters:
-        -----------
-        firebase_data: Dict[str, Union[int, List]]
-            The firebase data.
-        emotions_counter: Dict[str, int]
-            A dictionary of emotions and their counts.
-
-        Returns:
-        --------
-        firebase_data: Dict[str, Union[int, List]]
-            The updated firebase data.
-        """
-        for emotion, count in emotions_counter.items():
-            firebase_data[emotion] += count
-            firebase_data[f"OverAll{emotion}"].append(count)
-        return firebase_data
-    
-    def send_data_to_firebase(self, firebase_data, db, lec_name, id_sec_num):
-        """
-        Sends the data to the Firebase.
-
-        Parameters:
-        -----------
-        firebase_data: Dict[str, Union[int, List]]
-            The firebase data.
-        db: firebase_admin.firestore.client.Client
-            The Firebase client.
-        lec_name: str
-            The lecturer name.
-        id_sec_num: str
-            The ID, section, and number of the student.
-        
-        Returns:
-        --------
-        ret: bool
-            True if the data was sent successfully, False otherwise.
-        """
-        sent_data = firebase_data.copy()
-        section_reference = db.collection("Sections").document(get_sec_id(db, idx=4))
-        sent_data["LectureID_SectionNum"] = section_reference
-        sent_data["Date"] = datetime.datetime.now() 
-
-        all_emotions = ["Positive", "Negative", "Neutral"]
-        all_overall = [f"OverAll{emotion}" for emotion in all_emotions]
-        sums_overall = sum([sent_data[in_over][-1] for in_over in all_overall])
-
-        for overall in all_overall:
-            sent_data[overall] = sent_data[overall][-1]
-            sent_data[overall] /= sums_overall
-            sent_data[overall] = round(sent_data[overall], 3)
-
-        try:
-            # doc_ref = db.collection(config.DB_CONFIG["collection_name"]).document(config.DB_CONFIG["doc_reference"][lec_name])
-            doc_ref = db.collection(config.DB_CONFIG["collection_name"]).document()
-            doc_ref.create(sent_data)
-            return True
-        except Exception as e:
-            print(f"Logging: There was an error in sending the data to Firebase: {e}")
-            return False
-        
     def filter_yolo_results(self, results, labels, frame):
         """
         Filters the YOLO results to only include the faces.
