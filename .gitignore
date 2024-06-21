@@ -140,3 +140,4 @@ version.py
 
 # Custom Ignores
 assets/demo_video.MOV
+yolo*.pt
